@@ -1173,21 +1173,19 @@ function matchearDesde(transcript, startIdx, commit) {
       updateWordEl(matchedAt);
       idx = matchedAt + 1;
 
-    } else if (commit && dicha.length >= 3) {
-      // Resultado final, palabra sustancial, no coincide con nada cercano
-      // → sustitución: el alumno dijo otra palabra
+    } else if (commit && dicha.length >= 5) {
+      // Solo marcar error si la palabra es larga (≥5 letras) y MUY diferente (< 30%)
+      // Esto evita falsos positivos en móvil con palabras cortas o artículos
       const p = examState.palabras[idx];
-      if (p && p.estado === 'pendiente') {
+      if (p && p.estado === 'pendiente' && p.limpia.length >= 5) {
         const simEsperada = similaridad(dicha, p.limpia);
-        if (simEsperada < 0.45) {
-          // Claramente diferente → error de sustitución
+        if (simEsperada < 0.30) {
           p.estado = 'error';
           p.dicho = dicha;
           examState.errores.push({ idx, tipo: 'sustitución', esperada: p.original, dicho: dicha });
           updateWordEl(idx);
           idx++;
         } else {
-          // Parecida pero no suficiente → pronunciación aproximada, aceptar
           p.estado = 'correct';
           p.dicho = dicha;
           updateWordEl(idx);
