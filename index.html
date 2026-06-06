@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Examen de Lectura</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── NAVIGATION ── */
+  nav {
+    background: var(--primary);
+    color: white;
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav h1 { font-size: 1.1rem; font-weight: 700; }
+  nav .nav-tabs { display: flex; gap: 4px; }
+  nav button {
+    background: rgba(255,255,255,.15);
+    border: none;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: .85rem;
+    transition: background .2s;
+  }
+  nav button.active, nav button:hover { background: rgba(255,255,255,.3); }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--text); }
+
+  /* ── FORMS ── */
+  label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+  input[type=text], input[type=email], input[type=number], textarea, select {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: .95rem; color: var(--text);
+    background: #fff; transition: border-color .2s;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--primary);
+  }
+  textarea { resize: vertical; min-height: 300px; line-height: 1.6; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 8px; border: none;
+    cursor: pointer; font-size: .9rem; font-weight: 600;
+    transition: all .2s; text-decoration: none;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-outline {
+    background: transparent; color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .btn-lg { padding: 14px 28px; font-size: 1rem; border-radius: 10px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+  .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: .75rem; font-weight: 700;
+  }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+
+  /* ── READING AREA ── */
+  #reading-container {
+    background: #fffbeb;
+    border: 2px solid #fde68a;
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    font-size: 1.25rem;
+    line-height: 2;
+    max-height: 55vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    position: relative;
+    user-select: none;
+  }
+
+  .word {
+    display: inline;
+    padding: 2px 1px;
+    border-radius: 3px;
+    transition: background .2s;
+    cursor: default;
+  }
+  .word.current {
+    background: #fde68a;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .word.correct { color: var(--success); }
+  .word.error {
+    background: #fee2e2;
+    color: var(--danger);
+    text-decoration: underline wavy var(--danger);
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  .word.skipped {
+    background: #fef9c3;
+    color: var(--warning);
+  }
+
+  /* ── TIMER ── */
+  #timer-display {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+  }
+
+  /* ── MIC INDICATOR ── */
+  .mic-indicator {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #ccc; display: inline-block;
+    transition: background .3s;
+  }
+  .mic-indicator.listening { background: #ef4444; animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: .7; }
+  }
+
+  /* ── VU METER ── */
+  .reading-wrap {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+  #reading-container {
+    flex: 1;
+  }
+  .vu-wrap {
+    width: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .vu-label {
+    font-size: .6rem;
+    font-weight: 700;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  #vu-bar-wrap {
+    flex: 1;
+    width: 18px;
+    background: #e2e8f0;
+    border-radius: 9px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+  }
+  #vu-fill {
+    width: 100%;
+    height: 0%;
+    border-radius: 9px;
+    transition: height 0.08s ease;
+    background: linear-gradient(to top, #16a34a 0%, #84cc16 60%, #f59e0b 80%, #ef4444 100%);
+  }
+  /* ── TIME-UP OVERLAY ── */
+  #timeup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  #timeup-overlay.show {
+    display: flex;
+  }
+  .timeup-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,.3);
+    animation: popIn .3s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(.7); opacity: 0; }
+    to   { transform: scale(1);  opacity: 1; }
+  }
+  .timeup-icon { font-size: 3.5rem; margin-bottom: 12px; }
+  .timeup-title { font-size: 1.8rem; font-weight: 800; color: var(--danger); margin-bottom: 8px; }
+  .timeup-sub { color: var(--muted); margin-bottom: 24px; font-size: 1rem; }
+
+  /* ── STATS GRID ── */
+  .stat-box {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-box .val {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-box .lbl { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+
+  /* ── ERROR TABLE ── */
+  .error-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+  .error-table th {
+    text-align: left; padding: 10px 12px;
+    background: var(--bg); font-weight: 700;
+    border-bottom: 2px solid var(--border);
+  }
+  .error-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .error-table tr:last-child td { border-bottom: none; }
+
+  /* ── SCORE RING ── */
+  .score-ring-wrap { display: flex; justify-content: center; margin: 8px 0 16px; }
+  .score-ring { position: relative; width: 120px; height: 120px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .score-val {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 1.8rem; font-weight: 800;
+  }
+  .score-ring .score-lbl { font-size: .65rem; color: var(--muted); font-weight: 600; }
+
+  /* ── EXAM TEXTS LIST ── */
+  .text-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: var(--bg);
+    border-radius: 8px; margin-bottom: 10px;
+    transition: background .2s;
+  }
+  .text-item:hover { background: #e0f2fe; }
+  .text-item .ti-title { font-weight: 600; flex: 1; }
+  .text-item .ti-meta { font-size: .8rem; color: var(--muted); }
+
+  /* ── RECOMMENDATIONS ── */
+  .rec-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px; background: var(--bg); border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .rec-item .rec-icon { font-size: 1.2rem; }
+  .rec-item .rec-text { font-size: .9rem; line-height: 1.5; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%; background: var(--primary);
+    border-radius: 4px; transition: width .3s;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 20px;
+    border-radius: 8px; font-size: .875rem; z-index: 999;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal h3 { font-size: 1.2rem; margin-bottom: 16px; }
+
+  .section-gap { margin-bottom: 16px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+
+  @media print {
+    nav, .no-print { display: none !important; }
+    .page { display: block !important; padding: 0; }
+    #page-report { display: block !important; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>📚 Lector Educativo</h1>
+  <div class="nav-tabs">
+    <button class="active" onclick="showPage('maestro')" id="tab-maestro">Maestro</button>
+    <button onclick="showPage('examen')" id="tab-examen">Examen</button>
+    <button onclick="showPage('reporte')" id="tab-reporte">Reporte</button>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════
+     PAGE: MAESTRO
+════════════════════════════════════ -->
+<div class="page active" id="page-maestro">
+
+  <div class="card">
+    <h2>➕ Nuevo texto de lectura</h2>
+
+    <div class="section-gap">
+      <label>Título del texto</label>
+      <input type="text" id="txt-titulo" placeholder="Ej: La tortuga y la liebre">
+    </div>
+
+    <div class="grid-2 section-gap">
+      <div>
+        <label>Nivel / Grado</label>
+        <select id="txt-grado">
+          <option>Primero de primaria</option>
+          <option>Segundo de primaria</option>
+          <option>Tercero de primaria</option>
+          <option>Cuarto de primaria</option>
+          <option>Quinto de primaria</option>
+          <option>Sexto de primaria</option>
+          <option>Secundaria</option>
+          <option>Preparatoria</option>
+        </select>
+      </div>
+      <div>
+        <label>Tiempo máximo (minutos)</label>
+        <input type="number" id="txt-tiempo" value="1" min="1" max="30">
+      </div>
+    </div>
+
+    <div class="section-gap">
+      <label>Texto de lectura</label>
+      <textarea id="txt-contenido" placeholder="Pega o escribe aquí el texto que el alumno deberá leer..."></textarea>
+    </div>
+
+    <div class="flex mt-16">
+      <button class="btn btn-primary" onclick="guardarTexto()">💾 Guardar texto</button>
+      <button class="btn btn-outline" onclick="cargarEjemplo()">📄 Cargar ejemplo</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:16px">
+      <h2 style="margin:0">📋 Textos guardados</h2>
+      <span id="badge-textos" class="badge badge-blue">0 textos</span>
+    </div>
+    <div id="lista-textos">
+      <p style="color:var(--muted);font-size:.9rem">No hay textos guardados aún.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Reportes recientes</h2>
+    <div id="lista-reportes">
+      <p style="color:var(--muted);font-size:.9rem">No hay reportes aún.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: EXAMEN
+════════════════════════════════════ -->
+<div class="page" id="page-examen">
+
+  <!-- Setup -->
+  <div id="exam-setup">
+    <div class="card">
+      <h2>🎓 Iniciar examen de lectura</h2>
+
+      <div class="section-gap">
+        <label>Nombre del alumno</label>
+        <input type="text" id="alumno-nombre" placeholder="Nombre completo">
+      </div>
+
+      <div class="section-gap">
+        <label>Seleccionar texto</label>
+        <select id="exam-texto-select">
+          <option value="">-- Selecciona un texto --</option>
+        </select>
+      </div>
+
+      <div id="preview-texto" style="display:none" class="section-gap">
+        <label>Vista previa</label>
+        <div style="background:var(--bg);padding:16px;border-radius:8px;font-size:.9rem;line-height:1.7;max-height:200px;overflow-y:auto;position:relative">
+          <div id="preview-content"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,var(--bg))"></div>
+        </div>
+      </div>
+
+      <!-- Verificador de micrófono -->
+      <div style="margin-top:16px;padding:14px 16px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg)">
+        <div class="flex-between">
+          <div class="flex" style="gap:10px;align-items:center">
+            <span id="mic-check-icon" style="font-size:1.4rem">🎙️</span>
+            <div>
+              <div style="font-weight:600;font-size:.9rem" id="mic-check-label">Micrófono sin verificar</div>
+              <div style="font-size:.78rem;color:var(--muted)" id="mic-check-sub">Verifica el micrófono antes de iniciar</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="font-size:.85rem;padding:7px 14px" onclick="probarMicrofono()">Probar</button>
+        </div>
+        <div id="mic-check-error" style="display:none;margin-top:10px;padding:10px;background:#fee2e2;border-radius:8px;font-size:.83rem;color:#b91c1c;line-height:1.5"></div>
+      </div>
+
+      <div class="mt-16">
+        <button class="btn btn-primary btn-lg" onclick="iniciarExamen()" id="btn-iniciar-examen">🎙️ Iniciar examen</button>
+      </div>
+    </div>
+
+    <div class="card" style="background:#eff6ff;border:1.5px solid #bfdbfe">
+      <h2>ℹ️ Instrucciones para el alumno</h2>
+      <ol style="padding-left:20px;line-height:2;font-size:.95rem">
+        <li>Abre la app desde <strong>http://localhost:8080</strong> (no desde archivo).</li>
+        <li>Presiona <strong>"Probar"</strong> el micrófono y haz clic en <strong>Permitir</strong> en el navegador.</li>
+        <li>Lee el texto en voz alta, con claridad y entonación natural.</li>
+        <li>El texto se desplazará automáticamente al avanzar.</li>
+        <li>Cuando termines, presiona el botón <strong>"Finalizar"</strong>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Exam in progress -->
+  <div id="exam-activo" style="display:none">
+
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:600">ALUMNO</div>
+          <div id="exam-alumno-name" style="font-weight:700;font-size:1.1rem"></div>
+        </div>
+        <div style="text-align:center">
+          <div id="timer-display">00:00</div>
+          <div style="font-size:.7rem;color:var(--muted);font-weight:600">TIEMPO</div>
+        </div>
+        <div style="text-align:right">
+          <div class="flex" style="gap:8px;align-items:center;justify-content:flex-end">
+            <span class="mic-indicator" id="mic-dot"></span>
+            <span id="mic-status" style="font-size:.8rem;color:var(--muted)">Escuchando...</span>
+          </div>
+          <div id="wpm-live" style="font-size:.8rem;color:var(--muted);margin-top:4px">0 pal/min</div>
+        </div>
+      </div>
+
+      <div class="progress-bar section-gap">
+        <div class="fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="reading-wrap">
+        <div id="reading-container">
+          <div id="reading-text"></div>
+        </div>
+        <div class="vu-wrap">
+          <div class="vu-label">Audio</div>
+          <div id="vu-bar-wrap">
+            <div id="vu-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between">
+        <div style="font-size:.9rem;color:var(--muted)">
+          Errores detectados: <strong id="live-errores">0</strong>
+        </div>
+        <div class="flex" style="gap:8px">
+          <button class="btn btn-outline" onclick="pausarExamen()" id="btn-pausar">⏸️ Pausar</button>
+          <button class="btn btn-danger" onclick="finalizarExamen()">✅ Finalizar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: REPORTE
+════════════════════════════════════ -->
+<div class="page" id="page-reporte">
+
+  <div id="reporte-vacio" class="card" style="text-align:center;padding:40px">
+    <div style="font-size:3rem;margin-bottom:12px">📋</div>
+    <p style="color:var(--muted)">Aún no hay un reporte. Realiza un examen primero.</p>
+  </div>
+
+  <div id="reporte-contenido" style="display:none">
+
+    <div class="card" id="reporte-encabezado">
+      <div class="flex-between">
+        <div>
+          <div style="font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase">Reporte de Lectura</div>
+          <h2 id="rpt-titulo" style="font-size:1.4rem;margin-bottom:4px"></h2>
+          <div style="font-size:.875rem;color:var(--muted)">
+            Alumno: <strong id="rpt-alumno"></strong> &nbsp;|&nbsp; Fecha: <strong id="rpt-fecha"></strong>
+          </div>
+        </div>
+        <div class="no-print flex" style="gap:8px">
+          <button class="btn btn-outline" onclick="imprimirReporte()">🖨️ Imprimir / PDF</button>
+          <button class="btn btn-primary" onclick="abrirModalEmail()">📧 Enviar por correo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score general -->
+    <div class="card">
+      <h2>Puntuación general</h2>
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="12"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#2563eb" stroke-width="12"
+              stroke-dasharray="314" stroke-dashoffset="314" id="score-circle"
+              stroke-linecap="round"/>
+          </svg>
+          <div class="score-val">
+            <span id="score-num">0</span>
+            <span class="score-lbl">/ 100</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:20px">
+        <span id="score-nivel" class="badge badge-blue" style="font-size:.9rem;padding:6px 16px"></span>
+      </div>
+      <div class="grid-2" style="grid-template-columns:repeat(4,1fr);gap:10px">
+        <div class="stat-box">
+          <div class="val" id="rpt-tiempo" style="color:var(--primary)">--</div>
+          <div class="lbl">Tiempo</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="rpt-wpm" style="color:var(--success)">--</div>
+          <div class="lbl">Pal/min</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="rpt-errores" style="color:var(--danger)">--</div>
+          <div class="lbl">Errores</div>
+        </div>
+        <div class="stat-box">
+          <div class="val" id="rpt-precision" style="color:var(--warning)">--</div>
+          <div class="lbl">Precisión</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parametros evaluados -->
+    <div class="card">
+      <h2>Parámetros evaluados</h2>
+      <div id="param-grid" class="grid-2" style="gap:12px"></div>
+    </div>
+
+    <!-- Texto con errores marcados -->
+    <div class="card">
+      <h2>Lectura con errores marcados</h2>
+      <div id="rpt-texto-marcado"
+        style="font-size:1.05rem;line-height:2;background:var(--bg);padding:20px;border-radius:8px">
+      </div>
+      <div class="flex mt-16" style="gap:16px;font-size:.8rem">
+        <span><span style="background:#dcfce7;padding:2px 8px;border-radius:3px;color:#15803d">Correcto</span></span>
+        <span><span style="background:#fee2e2;padding:2px 8px;border-radius:3px;color:#b91c1c">Error / sustitución</span></span>
+        <span><span style="background:#fef9c3;padding:2px 8px;border-radius:3px;color:#92400e">Omitida</span></span>
+      </div>
+    </div>
+
+    <!-- Tabla de errores -->
+    <div class="card" id="card-errores-tabla">
+      <h2>Detalle de errores</h2>
+      <div style="overflow-x:auto">
+        <table class="error-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Palabra esperada</th>
+              <th>Lo que dijo</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-errores-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="card">
+      <h2>💡 Recomendaciones</h2>
+      <div id="recomendaciones-lista"></div>
+    </div>
+
+    <!-- Observaciones del maestro -->
+    <div class="card no-print">
+      <h2>✏️ Observaciones adicionales del maestro</h2>
+      <textarea id="obs-maestro" placeholder="Escribe aquí observaciones adicionales..." style="min-height:100px"></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!-- OVERLAY TIEMPO AGOTADO -->
+<div id="timeup-overlay">
+  <div class="timeup-box">
+    <div class="timeup-icon">⏰</div>
+    <div class="timeup-title">¡Tiempo agotado!</div>
+    <div class="timeup-sub">El tiempo asignado para la lectura ha finalizado.</div>
+    <button class="btn btn-primary btn-lg" onclick="cerrarTimeup()">Ver reporte</button>
+  </div>
+</div>
+
+<!-- MODAL EMAIL -->
+<div class="modal-overlay" id="modal-email">
+  <div class="modal">
+    <h3>📧 Enviar reporte por correo</h3>
+    <div class="section-gap">
+      <label>Correo del destinatario</label>
+      <input type="email" id="email-dest" placeholder="padre@ejemplo.com">
+    </div>
+    <div class="section-gap">
+      <label>Mensaje adicional (opcional)</label>
+      <textarea id="email-msg" style="min-height:80px" placeholder="Ej: Estimado padre de familia, adjunto el reporte de lectura..."></textarea>
+    </div>
+    <div class="flex mt-16">
+      <button class="btn btn-primary" onclick="enviarEmail()">Enviar</button>
+      <button class="btn btn-outline" onclick="cerrarModalEmail()">Cancelar</button>
+    </div>
+    <div id="email-info" style="margin-top:12px;font-size:.8rem;color:var(--muted);line-height:1.5">
+      ℹ️ Se abrirá tu cliente de correo con el reporte listo. Para envío automático se requiere configurar un servidor SMTP.
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let textos = JSON.parse(localStorage.getItem('lr_textos') || '[]');
+let reportes = JSON.parse(localStorage.getItem('lr_reportes') || '[]');
+let examState = null;
+// indiceCommit = posición confirmada (solo resultados finales)
+// indicePreview = posición visual temporal (resultados intermedios)
+let timerInterval = null;
+let recognition = null;
+let audioCtx = null;
+let analyser = null;
+let waveformRAF = null;
+let currentReport = null;
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+
+  if (name === 'maestro') renderMaestro();
+  if (name === 'examen') renderExamenSetup();
+  if (name === 'reporte') renderReporte();
+}
+
+// ═══════════════════════════════════════
+// MAESTRO
+// ═══════════════════════════════════════
+function guardarTexto() {
+  const titulo = document.getElementById('txt-titulo').value.trim();
+  const contenido = document.getElementById('txt-contenido').value.trim();
+  const grado = document.getElementById('txt-grado').value;
+  const tiempo = parseInt(document.getElementById('txt-tiempo').value) || 3;
+
+  if (!titulo || !contenido) { toast('Completa el título y el texto'); return; }
+
+  const txt = { id: Date.now(), titulo, contenido, grado, tiempo, palabras: contarPalabras(contenido) };
+  textos.push(txt);
+  localStorage.setItem('lr_textos', JSON.stringify(textos));
+
+  document.getElementById('txt-titulo').value = '';
+  document.getElementById('txt-contenido').value = '';
+  toast('Texto guardado correctamente ✓');
+  renderMaestro();
+}
+
+function eliminarTexto(id) {
+  if (!confirm('¿Eliminar este texto?')) return;
+  textos = textos.filter(t => t.id !== id);
+  localStorage.setItem('lr_textos', JSON.stringify(textos));
+  renderMaestro();
+  toast('Texto eliminado');
+}
+
+function cargarEjemplo() {
+  document.getElementById('txt-titulo').value = 'El lobo y el cordero';
+  document.getElementById('txt-contenido').value =
+`Un lobo vio a un cordero bebiendo agua en un río y quiso comérselo. Buscó un pretexto para justificar su ataque.
+
+—Tú me estás enturbiando el agua que estoy bebiendo —le dijo.
+
+—¿Cómo podría enturbiártela yo, si el agua corre de ti hacia mí? —respondió el cordero.
+
+—Bueno, pues hace seis meses me insultaste —replicó el lobo.
+
+—Pero si hace seis meses yo todavía no había nacido —dijo el cordero.
+
+—Si no fuiste tú, fue tu padre —gruñó el lobo, y sin más, se abalanzó sobre él y se lo comió.
+
+Esta fábula nos enseña que el tirano siempre encontrará una excusa para actuar con injusticia.`;
+  toast('Ejemplo cargado');
+}
+
+function renderMaestro() {
+  const lista = document.getElementById('lista-textos');
+  const todos = getTodosTextos();
+  document.getElementById('badge-textos').textContent = todos.length + ' textos';
+
+  lista.innerHTML = todos.map(t => `
+    <div class="text-item">
+      <div style="font-size:1.5rem">${t.id >= 1000 && t.id <= 1002 ? '📚' : '📄'}</div>
+      <div style="flex:1">
+        <div class="ti-title">${t.titulo} ${t.id <= 1002 ? '<span class="badge badge-blue" style="font-size:.65rem">Precargado</span>' : ''}</div>
+        <div class="ti-meta">${t.grado} · ${t.palabras} palabras · ${t.tiempo} min</div>
+      </div>
+      <div class="flex" style="gap:8px">
+        <button class="btn btn-primary" style="padding:6px 12px;font-size:.8rem"
+          onclick="iniciarConTexto(${t.id})">▶ Examinar</button>
+        ${t.id > 1002 ? `<button class="btn btn-outline" style="padding:6px 12px;font-size:.8rem;border-color:var(--danger);color:var(--danger)"
+          onclick="eliminarTexto(${t.id})">🗑</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  const listaRpt = document.getElementById('lista-reportes');
+  if (reportes.length === 0) {
+    listaRpt.innerHTML = '<p style="color:var(--muted);font-size:.9rem">No hay reportes aún.</p>';
+  } else {
+    listaRpt.innerHTML = reportes.slice(-5).reverse().map(r => `
+      <div class="text-item" onclick="verReporte(${r.id})" style="cursor:pointer">
+        <div style="font-size:1.5rem">📊</div>
+        <div style="flex:1">
+          <div class="ti-title">${r.alumno} — ${r.titulo}</div>
+          <div class="ti-meta">${r.fecha} · Puntuación: ${r.score}/100 · ${r.errores} errores</div>
+        </div>
+        <span class="badge ${r.score >= 80 ? 'badge-green' : r.score >= 60 ? 'badge-yellow' : 'badge-red'}">${r.score}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ═══════════════════════════════════════
+// EXAM SETUP
+// ═══════════════════════════════════════
+function renderExamenSetup() {
+  const sel = document.getElementById('exam-texto-select');
+  sel.innerHTML = '<option value="">-- Selecciona un texto --</option>';
+  getTodosTextos().forEach(t => {
+    sel.innerHTML += `<option value="${t.id}">${t.titulo} (${t.palabras} palabras)</option>`;
+  });
+  sel.onchange = () => {
+    const t = getTodosTextos().find(x => x.id == sel.value);
+    if (t) {
+      document.getElementById('preview-texto').style.display = 'block';
+      document.getElementById('preview-content').textContent = t.contenido;
+    } else {
+      document.getElementById('preview-texto').style.display = 'none';
+    }
+  };
+}
+
+function iniciarConTexto(id) {
+  showPage('examen');
+  setTimeout(() => {
+    document.getElementById('exam-texto-select').value = id;
+    document.getElementById('exam-texto-select').dispatchEvent(new Event('change'));
+  }, 50);
+}
+
+function iniciarExamen() {
+  const alumno = document.getElementById('alumno-nombre').value.trim();
+  const textoId = document.getElementById('exam-texto-select').value;
+  if (!alumno) { toast('Escribe el nombre del alumno'); return; }
+  if (!textoId) { toast('Selecciona un texto'); return; }
+
+  const texto = getTodosTextos().find(t => t.id == textoId);
+  if (!texto) return;
+
+  examState = {
+    alumno,
+    texto,
+    palabras: tokenizarTexto(texto.contenido),
+    indiceActual: 0,
+    errores: [],
+    inicioMs: null,
+    tiempoTotal: 0,
+    pausado: false,
+    pausaMs: null,
+    transcripcion: [],
+    utteranceStart: 0,  // índice donde empezó la frase actual (resultados acumulativos)
+  };
+
+  document.getElementById('exam-setup').style.display = 'none';
+  document.getElementById('exam-activo').style.display = 'block';
+  document.getElementById('exam-alumno-name').textContent = alumno;
+  document.getElementById('live-errores').textContent = '0';
+
+  renderTextoExamen();
+  iniciarTimer();
+  iniciarVuMeter();
+  iniciarReconocimiento();
+}
+
+// ═══════════════════════════════════════
+// TOKENIZE & RENDER
+// ═══════════════════════════════════════
+function tokenizarTexto(texto) {
+  // Split preserving spaces and punctuation context
+  const tokens = [];
+  const regex = /(\S+)/g;
+  let m;
+  while ((m = regex.exec(texto)) !== null) {
+    tokens.push({
+      original: m[1],
+      limpia: limpiarPalabra(m[1]),
+      estado: 'pendiente', // pendiente | current | correct | error | skipped
+      dicho: '',
+      pos: m.index,
+    });
+  }
+  return tokens;
+}
+
+function limpiarPalabra(w) {
+  return w.toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')   // quitar diacríticos (acentos) correctamente
+    .replace(/[¿?¡!.,;:"""''\-–—()[\]]/g, '')
+    .trim();
+}
+
+function renderTextoExamen() {
+  const container = document.getElementById('reading-text');
+  container.innerHTML = '';
+
+  examState.palabras.forEach((p, i) => {
+    const span = document.createElement('span');
+    span.className = 'word ' + p.estado;
+    span.id = 'w-' + i;
+    span.textContent = p.original;
+    container.appendChild(span);
+    container.appendChild(document.createTextNode(' '));
+  });
+
+  scrollToWord(0);
+  markCurrent(0);
+}
+
+function markCurrent(idx) {
+  document.querySelectorAll('.word.current').forEach(el => el.classList.remove('current'));
+  const el = document.getElementById('w-' + idx);
+  if (el) {
+    el.classList.add('current');
+    scrollToWord(idx);
+  }
+}
+
+function scrollToWord(idx) {
+  const el = document.getElementById('w-' + idx);
+  const container = document.getElementById('reading-container');
+  if (!el || !container) return;
+
+  // getBoundingClientRect da posición visual actual (ya incluye el scroll actual)
+  const elRect        = el.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+
+  // Distancia del elemento al borde superior del container en pantalla
+  const relTop    = elRect.top - containerRect.top;
+  const objetivo  = container.clientHeight * 0.28; // mantener la palabra en el tercio superior
+
+  // Solo scrollear si la palabra salió de la zona objetivo (evita micro-saltos)
+  if (relTop < 0 || relTop > container.clientHeight * 0.6) {
+    container.scrollTop += relTop - objetivo;
+  }
+}
+
+function updateWordEl(idx) {
+  const p = examState.palabras[idx];
+  const el = document.getElementById('w-' + idx);
+  if (!el) return;
+  el.className = 'word ' + p.estado;
+  el.title = p.dicho ? `Dijo: "${p.dicho}"` : '';
+}
+
+// ═══════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════
+function iniciarTimer() {
+  examState.inicioMs = Date.now();
+  examState.terminado = false;
+  timerInterval = setInterval(() => {
+    if (!examState) { clearInterval(timerInterval); return; }
+    if (examState.pausado) return;
+
+    const elapsed = (Date.now() - examState.inicioMs) / 1000;
+    examState.tiempoTotal = elapsed;
+
+    const limite = examState.texto.tiempo * 60;
+    const restante = Math.max(0, limite - elapsed);
+
+    // Mostrar tiempo restante en el display
+    const timerEl = document.getElementById('timer-display');
+    if (timerEl) {
+      timerEl.textContent = formatTime(restante);
+      // Ponerse rojo en los últimos 30 segundos
+      timerEl.style.color = restante <= 30 ? 'var(--danger)' : 'var(--primary)';
+    }
+
+    const wpm = calcWPM(examState.indiceActual, elapsed);
+    const wpmEl = document.getElementById('wpm-live');
+    if (wpmEl) wpmEl.textContent = wpm + ' pal/min';
+
+    if (!examState.terminado && elapsed >= limite) {
+      examState.terminado = true;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      document.getElementById('timeup-overlay').classList.add('show');
+    }
+  }, 500);
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = Math.floor(s % 60).toString().padStart(2, '0');
+  return m + ':' + sec;
+}
+
+function calcWPM(palabras, segundos) {
+  if (segundos < 2) return 0;
+  return Math.round((palabras / segundos) * 60);
+}
+
+function pausarExamen() {
+  examState.pausado = !examState.pausado;
+  if (examState.pausado) {
+    examState.pausaMs = Date.now();
+    document.getElementById('btn-pausar').textContent = '▶️ Continuar';
+    if (recognition) recognition.stop();
+  } else {
+    if (examState.pausaMs) {
+      examState.inicioMs += Date.now() - examState.pausaMs;
+    }
+    document.getElementById('btn-pausar').textContent = '⏸️ Pausar';
+    iniciarReconocimiento();
+  }
+}
+
+// ═══════════════════════════════════════
+// SPEECH RECOGNITION
+// ═══════════════════════════════════════
+function iniciarReconocimiento() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    toast('⚠️ Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.');
+    document.getElementById('mic-status').textContent = 'No disponible';
+    return;
+  }
+
+  recognition = new SR();
+  recognition.lang = 'es';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    document.getElementById('mic-dot').classList.add('listening');
+    document.getElementById('mic-status').textContent = 'Escuchando...';
+  };
+
+  recognition.onend = () => {
+    document.getElementById('mic-dot').classList.remove('listening');
+    if (examState && !examState.pausado && !examState.terminado) {
+      setTimeout(() => {
+        if (recognition) try { recognition.start(); } catch(e) {}
+      }, 300);
+    }
+  };
+
+  const ERRORES_MIC = {
+    'not-allowed':    'Permiso de micrófono denegado. Ve a la barra del navegador y permite el micrófono.',
+    'not-found':      'No se detectó micrófono. Conecta uno e intenta de nuevo.',
+    'audio-capture':  'No se puede acceder al micrófono. Cierra otras apps que lo estén usando.',
+    'network':        'Error de red en el reconocedor de voz. Verifica tu conexión a internet.',
+    'service-not-allowed': 'El servicio de voz no está permitido. Usa http://localhost:8080, no file://',
+    'aborted':        '',
+    'no-speech':      '',
+  };
+
+  recognition.onerror = (e) => {
+    const msg = ERRORES_MIC[e.error];
+    if (msg === undefined) {
+      document.getElementById('mic-status').textContent = 'Error: ' + e.error;
+      toast('⚠️ Error de micrófono: ' + e.error);
+    } else if (msg) {
+      document.getElementById('mic-status').textContent = 'Sin permiso';
+      toast('⚠️ ' + msg);
+    }
+  };
+
+  recognition.onresult = (event) => {
+    // event.resultIndex = primer resultado nuevo/actualizado en esta llamada
+    // Los resultados de 0..resultIndex-1 ya son finales y fueron procesados
+    // Los de resultIndex..length-1 son la frase actual (acumulativos dentro de ella)
+    let utteranceText = '';
+    let esFinal = false;
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      utteranceText += event.results[i][0].transcript + ' ';
+      if (event.results[i].isFinal) esFinal = true;
+    }
+
+    utteranceText = utteranceText.trim();
+    if (!utteranceText) return;
+
+    // Pulso visual del VU meter
+    pulsoVoz(40 + Math.min(50, utteranceText.split(' ').length * 8));
+
+    // Matchear frase actual desde donde terminó la anterior
+    const nuevoIdx = matchearDesde(utteranceText, examState.utteranceStart, esFinal);
+
+    if (nuevoIdx > examState.indiceActual) {
+      examState.indiceActual = nuevoIdx;
+      markCurrent(examState.indiceActual);
+      const pct = Math.round((examState.indiceActual / examState.palabras.length) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('live-errores').textContent = examState.errores.length;
+    }
+
+    // Frase finalizada: mover punto de inicio para la siguiente
+    if (esFinal) {
+      examState.utteranceStart = examState.indiceActual;
+    }
+  };
+
+  try { recognition.start(); } catch(e) {}
+}
+
+// Matchea palabras del transcript contra el texto a partir de startIdx.
+// Devuelve el nuevo índice alcanzado.
+function matchearDesde(transcript, startIdx, commit) {
+  if (!examState) return startIdx;
+
+  const dichas = transcript.split(/\s+/).map(limpiarPalabra).filter(w => w.length > 0);
+  if (!dichas.length) return startIdx;
+
+  const total = examState.palabras.length;
+  let idx = startIdx;
+  const VENTANA = 4;
+  // Limitar avance máximo por resultado para evitar saltos visuales bruscos
+  const MAX_AVANCE = commit ? 999 : 12;
+
+  for (const dicha of dichas) {
+    if (idx >= total) break;
+    if (idx - startIdx >= MAX_AVANCE) break;  // no avanzar más de lo permitido
+
+    // Saltar palabras ya confirmadas
+    while (idx < total && (examState.palabras[idx].estado === 'correct' || examState.palabras[idx].estado === 'error')) {
+      idx++;
+    }
+    if (idx >= total) break;
+
+    let matchedAt = -1;
+
+    // Buscar coincidencia en ventana
+    for (let offset = 0; offset < VENTANA && idx + offset < total; offset++) {
+      const p = examState.palabras[idx + offset];
+      if (p.estado === 'correct' || p.estado === 'error') continue;
+      if (similaridad(dicha, p.limpia) >= 0.68) {
+        matchedAt = idx + offset;
+        break;
+      }
+    }
+
+    if (matchedAt >= 0) {
+      // Palabras intermedias saltadas: beneficio de la duda (se marcan al finalizar)
+      for (let s = idx; s < matchedAt; s++) {
+        const ps = examState.palabras[s];
+        if (ps.estado === 'pendiente' || ps.estado === 'current') {
+          ps.estado = 'correct';
+          ps.dicho = '(auto)';
+          updateWordEl(s);
+        }
+      }
+      examState.palabras[matchedAt].estado = 'correct';
+      examState.palabras[matchedAt].dicho = dicha;
+      updateWordEl(matchedAt);
+      idx = matchedAt + 1;
+    }
+    // Nunca marcar errores durante la lectura — se evalúan al finalizar
+  }
+
+  return Math.min(idx, total);
+}
+
+// Levenshtein-based similarity 0-1
+function similaridad(a, b) {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const la = a.length, lb = b.length;
+  const dp = Array.from({ length: la + 1 }, (_, i) => Array.from({ length: lb + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= la; i++)
+    for (let j = 1; j <= lb; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  const dist = dp[la][lb];
+  return 1 - dist / Math.max(la, lb);
+}
+
+// ═══════════════════════════════════════
+// WAVEFORM
+// ═══════════════════════════════════════
+// VU meter animado desde eventos de voz (sin getUserMedia extra)
+let vuLevel = 0;
+let vuRAF = null;
+
+function iniciarVuMeter() {
+  vuLevel = 0;
+  animarVu();
+}
+
+function animarVu() {
+  vuRAF = requestAnimationFrame(animarVu);
+  // Decaer gradualmente cuando no hay voz
+  vuLevel = Math.max(0, vuLevel - 3);
+  const fill = document.getElementById('vu-fill');
+  if (fill) fill.style.height = vuLevel + '%';
+}
+
+function pulsoVoz(nivel) {
+  // Llamado cuando llega un resultado de voz (0-100)
+  vuLevel = Math.min(100, Math.max(vuLevel, nivel));
+}
+
+function detenerVuMeter() {
+  if (vuRAF) { cancelAnimationFrame(vuRAF); vuRAF = null; }
+  vuLevel = 0;
+  const fill = document.getElementById('vu-fill');
+  if (fill) fill.style.height = '0%';
+}
+
+function cerrarTimeup() {
+  document.getElementById('timeup-overlay').classList.remove('show');
+  finalizarExamen();
+}
+
+// ─── VERIFICADOR DE MICRÓFONO ───────────────────────────────
+async function probarMicrofono() {
+  const icon  = document.getElementById('mic-check-icon');
+  const label = document.getElementById('mic-check-label');
+  const sub   = document.getElementById('mic-check-sub');
+  const errEl = document.getElementById('mic-check-error');
+
+  label.textContent = 'Verificando...';
+  sub.textContent   = 'Solicitando permiso al navegador';
+  icon.textContent  = '⏳';
+  errEl.style.display = 'none';
+
+  // 1. Verificar soporte de SpeechRecognition
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    icon.textContent  = '❌';
+    label.textContent = 'Navegador no compatible';
+    sub.textContent   = 'Usa Google Chrome o Microsoft Edge';
+    return;
+  }
+
+  // 2. Pedir permiso de micrófono con getUserMedia primero
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop()); // solo verificar, no grabar
+  } catch (err) {
+    icon.textContent  = '❌';
+    label.textContent = 'Micrófono bloqueado';
+    const guia = {
+      'NotAllowedError':  'Haz clic en el candado 🔒 de la barra de direcciones → Micrófono → Permitir → recarga la página.',
+      'NotFoundError':    'No se detectó micrófono en este dispositivo. Conecta uno e intenta de nuevo.',
+      'NotReadableError': 'Otra aplicación está usando el micrófono. Ciérrala e intenta de nuevo.',
+    };
+    const mensaje = guia[err.name] || ('Error: ' + err.message);
+    sub.textContent = mensaje;
+    errEl.textContent = '💡 ' + mensaje;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // 3. Probar SpeechRecognition brevemente
+  icon.textContent  = '🟡';
+  label.textContent = 'Probando reconocimiento de voz...';
+  sub.textContent   = 'Di algo en voz alta';
+
+  const testSR = new SR();
+  testSR.lang = 'es';
+  testSR.interimResults = true;
+  testSR.maxAlternatives = 1;
+  let detectado = false;
+
+  const timeout = setTimeout(() => {
+    testSR.stop();
+    if (!detectado) {
+      icon.textContent  = '⚠️';
+      label.textContent = 'Micrófono activo pero sin voz detectada';
+      sub.textContent   = 'Habla más fuerte o acércate al micrófono';
+    }
+  }, 5000);
+
+  testSR.onresult = () => {
+    detectado = true;
+    clearTimeout(timeout);
+    testSR.stop();
+    icon.textContent  = '✅';
+    label.textContent = 'Micrófono funcionando correctamente';
+    sub.textContent   = 'Listo para iniciar el examen';
+  };
+
+  testSR.onerror = (e) => {
+    clearTimeout(timeout);
+    const msgs = {
+      'not-allowed':         'Permiso denegado. Permite el micrófono en la barra del navegador.',
+      'service-not-allowed': 'Accede desde http://localhost:8080, no desde un archivo local.',
+      'network':             'Se requiere conexión a internet para el reconocimiento de voz.',
+      'not-found':           'No se encontró micrófono en este dispositivo.',
+    };
+    icon.textContent  = '❌';
+    label.textContent = 'Error: ' + (msgs[e.error] ? '' : e.error);
+    sub.textContent   = msgs[e.error] || '';
+    if (msgs[e.error]) {
+      errEl.textContent   = '💡 ' + msgs[e.error];
+      errEl.style.display = 'block';
+    }
+  };
+
+  try { testSR.start(); } catch(e) {
+    clearTimeout(timeout);
+    icon.textContent  = '❌';
+    label.textContent = 'No se pudo iniciar el reconocedor';
+    sub.textContent   = e.message;
+  }
+}
+
+// ═══════════════════════════════════════
+// FINALIZAR EXAMEN
+// ═══════════════════════════════════════
+function finalizarExamen() {
+  // Marcar terminado ANTES de detener el recognition para que onend no reinicie
+  if (examState) examState.terminado = true;
+
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  if (recognition) { try { recognition.abort(); } catch(e){} recognition = null; }
+  detenerVuMeter();
+
+  // Solo marcar como omitidas las palabras dentro del rango leído
+  // Las palabras más allá del índice actual simplemente no se alcanzaron (no son errores)
+  const idxFinal = examState.indiceActual;
+  examState.palabras.forEach((p, i) => {
+    if (i < idxFinal && (p.estado === 'pendiente' || p.estado === 'current')) {
+      p.estado = 'skipped';
+      examState.errores.push({ idx: i, tipo: 'omisión', esperada: p.original, dicho: '' });
+    } else if (i >= idxFinal && (p.estado === 'pendiente' || p.estado === 'current')) {
+      p.estado = 'pendiente'; // dejar sin evaluar
+    }
+  });
+
+  currentReport = generarReporte(examState);
+  reportes.push(currentReport);
+  if (reportes.length > 50) reportes = reportes.slice(-50);
+  localStorage.setItem('lr_reportes', JSON.stringify(reportes));
+
+  // Reset exam UI
+  document.getElementById('exam-setup').style.display = 'block';
+  document.getElementById('exam-activo').style.display = 'none';
+  examState = null;
+
+  showPage('reporte');
+}
+
+// ═══════════════════════════════════════
+// GENERATE REPORT
+// ═══════════════════════════════════════
+function generarReporte(state) {
+  const totalPalabras = state.palabras.length;
+  const palabrasLeidas = state.indiceActual; // solo las que el alumno alcanzó
+  const correctas = state.palabras.filter(p => p.estado === 'correct').length;
+  const errores = state.errores.filter(e => e.tipo === 'sustitución' || e.tipo === 'omisión').length;
+  // Precisión sobre palabras leídas, no sobre el total del texto
+  const precision = palabrasLeidas > 0 ? Math.round((correctas / palabrasLeidas) * 100) : 0;
+  const wpm = calcWPM(palabrasLeidas, state.tiempoTotal);
+  const tiempoMaxS = state.texto.tiempo * 60;
+  const dentroTiempo = state.tiempoTotal <= tiempoMaxS;
+
+  // Scoring
+  let score = 0;
+  score += Math.min(40, precision * 0.4);          // precisión 40pts
+  score += Math.min(30, Math.min(wpm, 150) * 0.2); // velocidad 30pts
+  score += dentroTiempo ? 20 : 10;                  // tiempo 20pts
+  // fluidez: pocas pausas largas aprox.
+  const fluidez = Math.max(0, 10 - Math.floor(errores / 3));
+  score += fluidez;
+  score = Math.round(Math.min(100, score));
+
+  return {
+    id: Date.now(),
+    alumno: state.alumno,
+    titulo: state.texto.titulo,
+    grado: state.texto.grado,
+    fecha: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
+    tiempoTotal: state.tiempoTotal,
+    wpm,
+    totalPalabras,
+    correctas,
+    errores,
+    precision,
+    score,
+    dentroTiempo,
+    palabras: state.palabras.map(p => ({ original: p.original, estado: p.estado, dicho: p.dicho })),
+    detalleErrores: state.errores,
+  };
+}
+
+// ═══════════════════════════════════════
+// RENDER REPORT
+// ═══════════════════════════════════════
+function renderReporte(rpt) {
+  const r = rpt || currentReport;
+  if (!r) {
+    document.getElementById('reporte-vacio').style.display = 'block';
+    document.getElementById('reporte-contenido').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('reporte-vacio').style.display = 'none';
+  document.getElementById('reporte-contenido').style.display = 'block';
+
+  document.getElementById('rpt-titulo').textContent = r.titulo;
+  document.getElementById('rpt-alumno').textContent = r.alumno;
+  document.getElementById('rpt-fecha').textContent = r.fecha;
+  document.getElementById('rpt-tiempo').textContent = formatTime(r.tiempoTotal);
+  document.getElementById('rpt-wpm').textContent = r.wpm;
+  document.getElementById('rpt-errores').textContent = r.errores;
+  document.getElementById('rpt-precision').textContent = r.precision + '%';
+
+  // Score ring animation
+  const circle = document.getElementById('score-circle');
+  const circumference = 314;
+  const offset = circumference - (r.score / 100) * circumference;
+  circle.style.strokeDashoffset = offset;
+  circle.style.stroke = r.score >= 80 ? '#16a34a' : r.score >= 60 ? '#d97706' : '#dc2626';
+  document.getElementById('score-num').textContent = r.score;
+
+  const nivel = r.score >= 90 ? 'Excelente' : r.score >= 80 ? 'Muy bueno' : r.score >= 70 ? 'Bueno' : r.score >= 60 ? 'Regular' : 'Necesita mejorar';
+  const nivelClass = r.score >= 80 ? 'badge-green' : r.score >= 60 ? 'badge-yellow' : 'badge-red';
+  document.getElementById('score-nivel').textContent = nivel;
+  document.getElementById('score-nivel').className = 'badge ' + nivelClass + ' ';
+  document.getElementById('score-nivel').style.cssText = 'font-size:.9rem;padding:6px 16px';
+
+  // Parámetros
+  const params = [
+    { nombre: 'Velocidad lectora', valor: r.wpm + ' pal/min', desc: wpmDesc(r.wpm), ok: r.wpm >= 60 },
+    { nombre: 'Precisión de palabras', valor: r.precision + '%', desc: r.precision >= 95 ? 'Excelente precisión' : r.precision >= 85 ? 'Buena precisión' : 'Requiere práctica', ok: r.precision >= 85 },
+    { nombre: 'Cumplimiento de tiempo', valor: r.dentroTiempo ? 'Sí' : 'No', desc: r.dentroTiempo ? 'Terminó dentro del tiempo' : 'Excedió el tiempo asignado', ok: r.dentroTiempo },
+    { nombre: 'Fluidez (errores)', valor: r.errores + ' errores', desc: r.errores === 0 ? 'Sin errores detectados' : r.errores <= 3 ? 'Muy pocos errores' : r.errores <= 8 ? 'Algunos errores' : 'Muchos errores', ok: r.errores <= 5 },
+  ];
+
+  document.getElementById('param-grid').innerHTML = params.map(p => `
+    <div style="background:${p.ok ? '#f0fdf4' : '#fff7ed'};border:1.5px solid ${p.ok ? '#86efac' : '#fdba74'};
+      border-radius:10px;padding:16px">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">${p.nombre}</div>
+      <div style="font-size:1.4rem;font-weight:800;color:${p.ok ? 'var(--success)' : 'var(--warning)'};">${p.valor}</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:4px">${p.desc}</div>
+    </div>
+  `).join('');
+
+  // Texto marcado
+  const textHtml = r.palabras.map(p => {
+    if (p.estado === 'correct') return `<span style="color:#15803d" title="Correcto">${p.original}</span>`;
+    if (p.estado === 'error') return `<span style="background:#fee2e2;color:#b91c1c;padding:1px 4px;border-radius:3px;text-decoration:underline wavy #dc2626" title='Dijo: "${p.dicho}"'>${p.original}</span>`;
+    if (p.estado === 'skipped') return `<span style="background:#fef9c3;color:#92400e;padding:1px 4px;border-radius:3px" title="Omitida">${p.original}</span>`;
+    return `<span style="color:#94a3b8">${p.original}</span>`;
+  }).join(' ');
+  document.getElementById('rpt-texto-marcado').innerHTML = textHtml;
+
+  // Tabla errores
+  const tbody = document.getElementById('tabla-errores-body');
+  if (r.detalleErrores.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">¡Sin errores detectados!</td></tr>';
+  } else {
+    tbody.innerHTML = r.detalleErrores.map((e, i) => `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><strong>${e.esperada}</strong></td>
+        <td style="color:${e.tipo==='omisión'?'var(--warning)':'var(--danger)'}">${e.dicho || '—'}</td>
+        <td><span class="badge ${e.tipo==='omisión'?'badge-yellow':'badge-red'}">${e.tipo}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  // Recomendaciones
+  const recs = generarRecomendaciones(r);
+  document.getElementById('recomendaciones-lista').innerHTML = recs.map(rec => `
+    <div class="rec-item">
+      <div class="rec-icon">${rec.icon}</div>
+      <div class="rec-text">${rec.texto}</div>
+    </div>
+  `).join('');
+}
+
+function wpmDesc(wpm) {
+  if (wpm < 30) return 'Velocidad muy baja';
+  if (wpm < 60) return 'Velocidad lenta';
+  if (wpm < 90) return 'Velocidad moderada';
+  if (wpm < 130) return 'Velocidad adecuada';
+  return 'Velocidad fluida';
+}
+
+function generarRecomendaciones(r) {
+  const recs = [];
+
+  if (r.wpm < 40) recs.push({ icon: '🐢', texto: '<strong>Velocidad muy baja:</strong> Se recomienda practicar lectura diaria de textos cortos para aumentar la fluidez. Leer en voz alta durante 10 minutos al día puede mejorar significativamente la velocidad.' });
+  else if (r.wpm < 70) recs.push({ icon: '⏱️', texto: '<strong>Velocidad por debajo del promedio:</strong> Practicar seguimiento visual de líneas y evitar vocalización interna excesiva. Ejercicios de lectura cronometrada ayudarán a mejorar el ritmo.' });
+  else if (r.wpm >= 120) recs.push({ icon: '✅', texto: '<strong>Excelente velocidad lectora:</strong> El alumno muestra una velocidad de lectura fluida. Mantener la práctica regular para consolidar este logro.' });
+
+  if (r.precision < 85) recs.push({ icon: '🔤', texto: '<strong>Precisión mejorable:</strong> Se detectaron varias sustituciones de palabras. Revisar el vocabulario del texto antes de leer y practicar la decodificación de palabras complejas.' });
+  else if (r.precision >= 97) recs.push({ icon: '🌟', texto: '<strong>Pronunciación excelente:</strong> El alumno leyó las palabras con alta precisión. Continuar con textos de mayor complejidad.' });
+
+  if (!r.dentroTiempo) recs.push({ icon: '⏰', texto: '<strong>Tiempo excedido:</strong> El alumno no completó la lectura dentro del tiempo asignado. Trabajar en la velocidad de lectura y reducir las pausas innecesarias entre palabras.' });
+
+  const omisiones = r.detalleErrores.filter(e => e.tipo === 'omisión').length;
+  if (omisiones > 3) recs.push({ icon: '👁️', texto: `<strong>${omisiones} palabras omitidas:</strong> El alumno saltó varias palabras. Practicar el seguimiento con el dedo o un marcador visual puede ayudar a mantener el lugar en el texto.` });
+
+  const sustituciones = r.detalleErrores.filter(e => e.tipo === 'sustitución').length;
+  if (sustituciones > 3) recs.push({ icon: '📖', texto: `<strong>${sustituciones} sustituciones de palabras:</strong> Se recomienda ampliar el vocabulario y practicar la lectura pausada cuando aparezcan palabras desconocidas.` });
+
+  if (recs.length === 0) recs.push({ icon: '🏆', texto: '<strong>¡Excelente desempeño!</strong> El alumno demostró una lectura fluida, precisa y dentro del tiempo establecido. Se recomienda avanzar a textos de mayor complejidad.' });
+
+  return recs;
+}
+
+// ═══════════════════════════════════════
+// PRINT / PDF
+// ═══════════════════════════════════════
+function imprimirReporte() {
+  window.print();
+}
+
+// ═══════════════════════════════════════
+// EMAIL
+// ═══════════════════════════════════════
+function abrirModalEmail() {
+  document.getElementById('modal-email').classList.add('open');
+}
+function cerrarModalEmail() {
+  document.getElementById('modal-email').classList.remove('open');
+}
+
+function enviarEmail() {
+  const dest = document.getElementById('email-dest').value.trim();
+  const msg = document.getElementById('email-msg').value.trim();
+  if (!currentReport) return;
+  if (!dest || !dest.includes('@')) { toast('Ingresa un correo válido'); return; }
+
+  const r = currentReport;
+  const asunto = encodeURIComponent(`Reporte de Lectura - ${r.alumno} - ${r.titulo}`);
+  const cuerpo = encodeURIComponent(
+`Reporte de Lectura
+==================
+Alumno: ${r.alumno}
+Texto: ${r.titulo}
+Fecha: ${r.fecha}
+Grado: ${r.grado}
+
+RESULTADOS
+----------
+Puntuación general: ${r.score}/100
+Tiempo: ${formatTime(r.tiempoTotal)}
+Velocidad: ${r.wpm} palabras por minuto
+Precisión: ${r.precision}%
+Errores detectados: ${r.errores}
+
+ERRORES DETALLE
+---------------
+${r.detalleErrores.map((e,i) => `${i+1}. "${e.esperada}" → ${e.dicho || '(omitida)'} [${e.tipo}]`).join('\n')}
+
+RECOMENDACIONES
+---------------
+${generarRecomendaciones(r).map(rec => '• ' + rec.texto.replace(/<[^>]+>/g, '')).join('\n')}
+
+${msg ? '\nOBSERVACIONES DEL MAESTRO:\n' + msg : ''}
+
+---
+Generado por Lector Educativo
+`);
+
+  window.location.href = `mailto:${dest}?subject=${asunto}&body=${cuerpo}`;
+  cerrarModalEmail();
+  toast('Abriendo cliente de correo...');
+}
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+function contarPalabras(texto) {
+  return texto.trim().split(/\s+/).length;
+}
+
+function verReporte(id) {
+  const r = reportes.find(x => x.id === id);
+  if (!r) return;
+  currentReport = r;
+  showPage('reporte');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════
+// PRELOADED TEXTS (cargados una sola vez)
+// ═══════════════════════════════════════
+// Textos precargados: SIEMPRE desde el código, nunca desde localStorage
+// Así el tiempo y contenido siempre son los correctos sin importar caché
+const TEXTOS_PRECARGADOS = [
+  {
+    id: 1000,
+    titulo: 'El último refugio',
+    grado: 'Secundaria',
+    tiempo: 1,
+    contenido: `El viento arrastraba hojas secas por las calles vacías del pueblo cuando Alejandro descubrió la vieja biblioteca. Nadie la frecuentaba desde hacía años; las ventanas estaban cubiertas de polvo y la puerta crujía al abrirse, como si protestara por tanto tiempo de abandono.
+
+Adentro, el olor a papel viejo lo envolvió de inmediato. Las estanterías llegaban hasta el techo, repletas de libros de todos los tamaños y colores. Algunos tenían los lomos tan desgastados que era imposible leer sus títulos. Otros parecían nuevos, como si nadie los hubiera tocado jamás.
+
+Alejandro caminó despacio entre los pasillos, rozando con los dedos los lomos de los libros. De pronto, uno llamó su atención: era delgado, de cubierta negra, sin título visible. Lo tomó con cuidado y lo abrió. En la primera página, escrita con tinta azul desvanecida, había una sola frase:
+
+"El que lee estas palabras encontrará lo que busca."
+
+Alejandro cerró el libro, lo miró fijamente y sonrió. No sabía lo que buscaba, pero por primera vez en mucho tiempo, sintió que estaba en el lugar correcto.`
+  },
+  {
+    id: 1001,
+    titulo: 'El cambio climático y sus consecuencias',
+    grado: 'Secundaria',
+    tiempo: 1,
+    contenido: `El cambio climático es uno de los desafíos más urgentes que enfrenta la humanidad en el siglo XXI. Se refiere a la alteración prolongada de los patrones climáticos globales, principalmente como resultado de las actividades humanas que liberan grandes cantidades de gases de efecto invernadero a la atmósfera.
+
+Entre los gases más perjudiciales se encuentran el dióxido de carbono, producido por la quema de combustibles fósiles como el petróleo, el carbón y el gas natural, y el metano, generado por la descomposición de residuos orgánicos y la ganadería intensiva. Estos gases actúan como una capa que retiene el calor del sol dentro de la atmósfera, provocando el calentamiento progresivo del planeta.
+
+Las consecuencias de este fenómeno son visibles en múltiples aspectos. El derretimiento de los glaciares y los casquetes polares eleva el nivel del mar, amenazando a millones de personas que viven en zonas costeras. Los eventos meteorológicos extremos, como huracanes, sequías e inundaciones, se vuelven más frecuentes e intensos. Además, numerosas especies animales y vegetales se ven obligadas a migrar o se enfrentan a la extinción.
+
+Sin embargo, aún estamos a tiempo de actuar. La transición hacia energías renovables, la reforestación de bosques y el consumo responsable son acciones concretas que cada persona, comunidad y gobierno puede adoptar para frenar este proceso y proteger el planeta para las generaciones futuras.`
+  },
+  {
+    id: 1002,
+    titulo: '¿Deben los jóvenes desconectarse de las redes sociales?',
+    grado: 'Secundaria',
+    tiempo: 1,
+    contenido: `En la actualidad, los jóvenes pasan en promedio más de cuatro horas diarias frente a las pantallas de sus dispositivos móviles, gran parte de ese tiempo consumido en redes sociales. Esta realidad ha generado un debate cada vez más profundo en torno a los efectos que dicho consumo tiene sobre la salud mental, el rendimiento escolar y las relaciones interpersonales.
+
+Quienes defienden un uso moderado o incluso la desconexión temporal argumentan que la exposición constante a contenidos editados y filtrados distorsiona la percepción de la realidad. Los adolescentes, en una etapa de construcción de identidad, son especialmente vulnerables a compararse con los estándares de belleza, éxito y popularidad que se proyectan en estas plataformas. Estudios recientes vinculan el uso excesivo con el aumento de la ansiedad, la depresión y los trastornos del sueño.
+
+Por otro lado, los defensores de las redes sociales señalan que estas plataformas permiten a los jóvenes informarse, expresarse y conectar con personas de todo el mundo. En contextos donde el acceso a la cultura o a comunidades de apoyo es limitado, las redes sociales pueden representar una herramienta valiosa de inclusión y aprendizaje.
+
+La clave, entonces, no parece estar en la eliminación total, sino en la educación digital. Enseñar a los jóvenes a consumir contenido de forma crítica, a establecer límites de tiempo y a distinguir entre la vida real y la virtual es, sin duda, una de las tareas más importantes de la educación contemporánea.`
+  }
+];
+TEXTOS_PRECARGADOS.forEach(t => { t.palabras = contarPalabras(t.contenido); });
+
+// textos = precargados + los creados por el maestro (solo estos se guardan en localStorage)
+function getTodosTextos() {
+  return [...TEXTOS_PRECARGADOS, ...textos];
+}
+
+renderMaestro();
+</script>
+</body>
+</html>
