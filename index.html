@@ -1152,12 +1152,19 @@ function matchearDesde(transcript, startIdx, commit) {
     }
 
     if (matchedAt >= 0) {
-      // Palabras intermedias saltadas: beneficio de la duda (se marcan al finalizar)
+      // Palabras saltadas para llegar al match:
+      // offset 1-2 = omisión real, marcar como skipped en resultado final
       for (let s = idx; s < matchedAt; s++) {
         const ps = examState.palabras[s];
         if (ps.estado === 'pendiente' || ps.estado === 'current') {
-          ps.estado = 'correct';
-          ps.dicho = '(auto)';
+          if (commit) {
+            ps.estado = 'skipped';
+            ps.dicho = '(omitida)';
+            examState.errores.push({ idx: s, tipo: 'omisión', esperada: ps.original, dicho: '' });
+          } else {
+            ps.estado = 'correct';
+            ps.dicho = '(auto)';
+          }
           updateWordEl(s);
         }
       }
@@ -1165,8 +1172,29 @@ function matchearDesde(transcript, startIdx, commit) {
       examState.palabras[matchedAt].dicho = dicha;
       updateWordEl(matchedAt);
       idx = matchedAt + 1;
+
+    } else if (commit && dicha.length >= 3) {
+      // Resultado final, palabra sustancial, no coincide con nada cercano
+      // → sustitución: el alumno dijo otra palabra
+      const p = examState.palabras[idx];
+      if (p && p.estado === 'pendiente') {
+        const simEsperada = similaridad(dicha, p.limpia);
+        if (simEsperada < 0.45) {
+          // Claramente diferente → error de sustitución
+          p.estado = 'error';
+          p.dicho = dicha;
+          examState.errores.push({ idx, tipo: 'sustitución', esperada: p.original, dicho: dicha });
+          updateWordEl(idx);
+          idx++;
+        } else {
+          // Parecida pero no suficiente → pronunciación aproximada, aceptar
+          p.estado = 'correct';
+          p.dicho = dicha;
+          updateWordEl(idx);
+          idx++;
+        }
+      }
     }
-    // Nunca marcar errores durante la lectura — se evalúan al finalizar
   }
 
   return Math.min(idx, total);
