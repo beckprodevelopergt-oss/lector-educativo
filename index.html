@@ -1160,7 +1160,8 @@ function matchearDesde(transcript, startIdx) {
   return Math.min(idx, total);
 }
 
-// Análisis post-hoc: compara transcriptFull contra el texto original
+// Análisis post-hoc: detecta sustituciones claras comparando transcript vs texto
+// Conservador: solo marca error cuando hay certeza alta (evita falsos positivos móvil)
 function analizarErrores() {
   if (!examState) return;
   const texto = examState.transcriptFull.trim();
@@ -1168,39 +1169,35 @@ function analizarErrores() {
 
   const dicho = texto.split(/\s+/).map(limpiarPalabra).filter(w => w.length > 0);
   const palabras = examState.palabras;
-  const total = palabras.length;
   const idxFinal = examState.indiceActual;
 
-  // Reset estados dentro del rango leído para re-evaluar
   examState.errores = [];
-  for (let i = 0; i < idxFinal; i++) {
-    palabras[i].estado = 'pendiente';
-    palabras[i].dicho = '';
-  }
 
-  // Sequence alignment (greedy, ventana amplia)
-  let di = 0; // índice en dicho[]
-  let pi = 0; // índice en palabras[]
+  // Alignment greedy con ventana amplia
+  let di = 0;
+  let pi = 0;
+  const VENTANA = 8;
 
   while (di < dicho.length && pi < idxFinal) {
     const d = dicho[di];
 
-    // Buscar mejor match en ventana de palabras
+    // Buscar match en ventana hacia adelante
     let matchAt = -1;
-    const VENTANA = 6;
     for (let offset = 0; offset < VENTANA && pi + offset < idxFinal; offset++) {
-      if (similaridad(d, palabras[pi + offset].limpia) >= 0.68) {
+      if (similaridad(d, palabras[pi + offset].limpia) >= 0.72) {
         matchAt = pi + offset;
         break;
       }
     }
 
     if (matchAt >= 0) {
-      // Palabras saltadas = omisiones
+      // Palabras intermedia saltadas: benefit of the doubt (no marcar como omisión)
       for (let s = pi; s < matchAt; s++) {
-        palabras[s].estado = 'skipped';
-        examState.errores.push({ idx: s, tipo: 'omisión', esperada: palabras[s].original, dicho: '' });
-        updateWordEl(s);
+        if (palabras[s].estado !== 'error') {
+          palabras[s].estado = 'correct';
+          palabras[s].dicho = '(auto)';
+          updateWordEl(s);
+        }
       }
       palabras[matchAt].estado = 'correct';
       palabras[matchAt].dicho = d;
@@ -1208,11 +1205,13 @@ function analizarErrores() {
       pi = matchAt + 1;
       di++;
     } else {
-      // Palabra dicha sin match en ventana = sustitución sobre la palabra actual
-      if (palabras[pi].limpia.length >= 4 && d.length >= 4 && similaridad(d, palabras[pi].limpia) < 0.45) {
-        palabras[pi].estado = 'error';
-        palabras[pi].dicho = d;
-        examState.errores.push({ idx: pi, tipo: 'sustitución', esperada: palabras[pi].original, dicho: d });
+      // Sin match: sustitución solo si ambas palabras son largas y MUY diferentes
+      const pActual = palabras[pi];
+      if (pActual && d.length >= 6 && pActual.limpia.length >= 6 &&
+          similaridad(d, pActual.limpia) < 0.25) {
+        pActual.estado = 'error';
+        pActual.dicho = d;
+        examState.errores.push({ idx: pi, tipo: 'sustitución', esperada: pActual.original, dicho: d });
         updateWordEl(pi);
         pi++;
       }
@@ -1220,11 +1219,11 @@ function analizarErrores() {
     }
   }
 
-  // Palabras del rango que quedaron sin cubrir = omisiones
+  // Palabras del rango no cubiertas: benefit of the doubt (correct)
   for (let i = pi; i < idxFinal; i++) {
-    if (palabras[i].estado === 'pendiente') {
-      palabras[i].estado = 'skipped';
-      examState.errores.push({ idx: i, tipo: 'omisión', esperada: palabras[i].original, dicho: '' });
+    if (palabras[i].estado === 'pendiente' || palabras[i].estado === 'current') {
+      palabras[i].estado = 'correct';
+      palabras[i].dicho = '(auto)';
       updateWordEl(i);
     }
   }
@@ -1413,12 +1412,13 @@ function finalizarExamen() {
 // ═══════════════════════════════════════
 function generarReporte(state) {
   const totalPalabras = state.palabras.length;
-  const palabrasLeidas = state.indiceActual; // solo las que el alumno alcanzó
+  const palabrasLeidas = state.indiceActual;
+  // WPM: solo palabras que el alumno realmente dijo (no las auto-avanzadas por el scroll)
+  const palabrasDichas = state.palabras.filter(p => p.dicho && p.dicho !== '(auto)').length;
   const correctas = state.palabras.filter(p => p.estado === 'correct').length;
   const errores = state.errores.filter(e => e.tipo === 'sustitución' || e.tipo === 'omisión').length;
-  // Precisión sobre palabras leídas, no sobre el total del texto
   const precision = palabrasLeidas > 0 ? Math.round((correctas / palabrasLeidas) * 100) : 0;
-  const wpm = calcWPM(palabrasLeidas, state.tiempoTotal);
+  const wpm = calcWPM(palabrasDichas, state.tiempoTotal);
   const tiempoMaxS = state.texto.tiempo * 60;
   const dentroTiempo = state.tiempoTotal <= tiempoMaxS;
 
