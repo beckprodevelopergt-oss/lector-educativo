@@ -867,7 +867,8 @@ function iniciarExamen() {
     pausado: false,
     pausaMs: null,
     transcripcion: [],
-    utteranceStart: 0,  // índice donde empezó la frase actual (resultados acumulativos)
+    transcriptFull: '',   // texto completo dicho (para análisis al finalizar)
+    utteranceStart: 0,
   };
 
   document.getElementById('exam-setup').style.display = 'none';
@@ -1092,18 +1093,19 @@ function iniciarReconocimiento() {
     utteranceText = utteranceText.trim();
     if (!utteranceText) return;
 
-    // Pulso visual del VU meter
     pulsoVoz(40 + Math.min(50, utteranceText.split(' ').length * 8));
 
-    // Matchear frase actual desde donde terminó la anterior
-    const nuevoIdx = matchearDesde(utteranceText, examState.utteranceStart, esFinal);
+    // Acumular transcript completo (solo resultados finales)
+    if (esFinal) examState.transcriptFull += utteranceText + ' ';
+
+    // Avanzar índice para scroll y WPM — sin marcar errores en tiempo real
+    const nuevoIdx = matchearDesde(utteranceText, examState.utteranceStart);
 
     if (nuevoIdx > examState.indiceActual) {
       examState.indiceActual = nuevoIdx;
       markCurrent(examState.indiceActual);
       const pct = Math.round((examState.indiceActual / examState.palabras.length) * 100);
       document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('live-errores').textContent = examState.errores.length;
     }
 
     // Frase finalizada: mover punto de inicio para la siguiente
@@ -1117,7 +1119,8 @@ function iniciarReconocimiento() {
 
 // Matchea palabras del transcript contra el texto a partir de startIdx.
 // Devuelve el nuevo índice alcanzado.
-function matchearDesde(transcript, startIdx, commit) {
+// Solo para scroll y WPM — sin marcar errores en tiempo real
+function matchearDesde(transcript, startIdx) {
   if (!examState) return startIdx;
 
   const dichas = transcript.split(/\s+/).map(limpiarPalabra).filter(w => w.length > 0);
@@ -1125,73 +1128,106 @@ function matchearDesde(transcript, startIdx, commit) {
 
   const total = examState.palabras.length;
   let idx = startIdx;
-  const VENTANA = 4;
-  // Limitar avance máximo por resultado para evitar saltos visuales bruscos
-  const MAX_AVANCE = commit ? 999 : 12;
+  const VENTANA = 5;
+  const MAX_AVANCE = 14;
 
   for (const dicha of dichas) {
     if (idx >= total) break;
-    if (idx - startIdx >= MAX_AVANCE) break;  // no avanzar más de lo permitido
+    if (idx - startIdx >= MAX_AVANCE) break;
 
-    // Saltar palabras ya confirmadas
-    while (idx < total && (examState.palabras[idx].estado === 'correct' || examState.palabras[idx].estado === 'error')) {
-      idx++;
-    }
+    while (idx < total && examState.palabras[idx].estado === 'correct') idx++;
     if (idx >= total) break;
 
     let matchedAt = -1;
-
-    // Buscar coincidencia en ventana
     for (let offset = 0; offset < VENTANA && idx + offset < total; offset++) {
       const p = examState.palabras[idx + offset];
-      if (p.estado === 'correct' || p.estado === 'error') continue;
-      if (similaridad(dicha, p.limpia) >= 0.68) {
-        matchedAt = idx + offset;
-        break;
-      }
+      if (p.estado === 'correct') continue;
+      if (similaridad(dicha, p.limpia) >= 0.68) { matchedAt = idx + offset; break; }
     }
 
     if (matchedAt >= 0) {
-      // Palabras saltadas para llegar al match:
-      // offset 1-2 = omisión real, marcar como skipped en resultado final
-      // Palabras intermedias: siempre beneficio de la duda
-      // Las omisiones reales se detectan solo al finalizar
       for (let s = idx; s < matchedAt; s++) {
         const ps = examState.palabras[s];
-        if (ps.estado === 'pendiente' || ps.estado === 'current') {
-          ps.estado = 'correct';
-          ps.dicho = '(auto)';
-          updateWordEl(s);
-        }
+        if (ps.estado !== 'correct') { ps.estado = 'correct'; ps.dicho = '(auto)'; updateWordEl(s); }
       }
       examState.palabras[matchedAt].estado = 'correct';
       examState.palabras[matchedAt].dicho = dicha;
       updateWordEl(matchedAt);
       idx = matchedAt + 1;
-
-    } else if (commit && dicha.length >= 5) {
-      // Solo marcar error si la palabra es larga (≥5 letras) y MUY diferente (< 30%)
-      // Esto evita falsos positivos en móvil con palabras cortas o artículos
-      const p = examState.palabras[idx];
-      if (p && p.estado === 'pendiente' && p.limpia.length >= 5) {
-        const simEsperada = similaridad(dicha, p.limpia);
-        if (simEsperada < 0.30) {
-          p.estado = 'error';
-          p.dicho = dicha;
-          examState.errores.push({ idx, tipo: 'sustitución', esperada: p.original, dicho: dicha });
-          updateWordEl(idx);
-          idx++;
-        } else {
-          p.estado = 'correct';
-          p.dicho = dicha;
-          updateWordEl(idx);
-          idx++;
-        }
-      }
     }
   }
 
   return Math.min(idx, total);
+}
+
+// Análisis post-hoc: compara transcriptFull contra el texto original
+function analizarErrores() {
+  if (!examState) return;
+  const texto = examState.transcriptFull.trim();
+  if (!texto) return;
+
+  const dicho = texto.split(/\s+/).map(limpiarPalabra).filter(w => w.length > 0);
+  const palabras = examState.palabras;
+  const total = palabras.length;
+  const idxFinal = examState.indiceActual;
+
+  // Reset estados dentro del rango leído para re-evaluar
+  examState.errores = [];
+  for (let i = 0; i < idxFinal; i++) {
+    palabras[i].estado = 'pendiente';
+    palabras[i].dicho = '';
+  }
+
+  // Sequence alignment (greedy, ventana amplia)
+  let di = 0; // índice en dicho[]
+  let pi = 0; // índice en palabras[]
+
+  while (di < dicho.length && pi < idxFinal) {
+    const d = dicho[di];
+
+    // Buscar mejor match en ventana de palabras
+    let matchAt = -1;
+    const VENTANA = 6;
+    for (let offset = 0; offset < VENTANA && pi + offset < idxFinal; offset++) {
+      if (similaridad(d, palabras[pi + offset].limpia) >= 0.68) {
+        matchAt = pi + offset;
+        break;
+      }
+    }
+
+    if (matchAt >= 0) {
+      // Palabras saltadas = omisiones
+      for (let s = pi; s < matchAt; s++) {
+        palabras[s].estado = 'skipped';
+        examState.errores.push({ idx: s, tipo: 'omisión', esperada: palabras[s].original, dicho: '' });
+        updateWordEl(s);
+      }
+      palabras[matchAt].estado = 'correct';
+      palabras[matchAt].dicho = d;
+      updateWordEl(matchAt);
+      pi = matchAt + 1;
+      di++;
+    } else {
+      // Palabra dicha sin match en ventana = sustitución sobre la palabra actual
+      if (palabras[pi].limpia.length >= 4 && d.length >= 4 && similaridad(d, palabras[pi].limpia) < 0.45) {
+        palabras[pi].estado = 'error';
+        palabras[pi].dicho = d;
+        examState.errores.push({ idx: pi, tipo: 'sustitución', esperada: palabras[pi].original, dicho: d });
+        updateWordEl(pi);
+        pi++;
+      }
+      di++;
+    }
+  }
+
+  // Palabras del rango que quedaron sin cubrir = omisiones
+  for (let i = pi; i < idxFinal; i++) {
+    if (palabras[i].estado === 'pendiente') {
+      palabras[i].estado = 'skipped';
+      examState.errores.push({ idx: i, tipo: 'omisión', esperada: palabras[i].original, dicho: '' });
+      updateWordEl(i);
+    }
+  }
 }
 
 // Levenshtein-based similarity 0-1
@@ -1349,15 +1385,13 @@ function finalizarExamen() {
   if (recognition) { try { recognition.abort(); } catch(e){} recognition = null; }
   detenerVuMeter();
 
-  // Solo marcar como omitidas las palabras dentro del rango leído
-  // Las palabras más allá del índice actual simplemente no se alcanzaron (no son errores)
-  const idxFinal = examState.indiceActual;
+  // Análisis post-hoc: detecta errores reales comparando transcript completo vs texto
+  analizarErrores();
+
+  // Palabras más allá del rango leído: dejar sin evaluar
   examState.palabras.forEach((p, i) => {
-    if (i < idxFinal && (p.estado === 'pendiente' || p.estado === 'current')) {
-      p.estado = 'skipped';
-      examState.errores.push({ idx: i, tipo: 'omisión', esperada: p.original, dicho: '' });
-    } else if (i >= idxFinal && (p.estado === 'pendiente' || p.estado === 'current')) {
-      p.estado = 'pendiente'; // dejar sin evaluar
+    if (i >= examState.indiceActual && (p.estado === 'pendiente' || p.estado === 'current')) {
+      p.estado = 'pendiente';
     }
   });
 
