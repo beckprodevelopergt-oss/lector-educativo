@@ -1154,17 +1154,13 @@ function matchearDesde(transcript, startIdx, commit) {
     if (matchedAt >= 0) {
       // Palabras saltadas para llegar al match:
       // offset 1-2 = omisión real, marcar como skipped en resultado final
+      // Palabras intermedias: siempre beneficio de la duda
+      // Las omisiones reales se detectan solo al finalizar
       for (let s = idx; s < matchedAt; s++) {
         const ps = examState.palabras[s];
         if (ps.estado === 'pendiente' || ps.estado === 'current') {
-          if (commit) {
-            ps.estado = 'skipped';
-            ps.dicho = '(omitida)';
-            examState.errores.push({ idx: s, tipo: 'omisión', esperada: ps.original, dicho: '' });
-          } else {
-            ps.estado = 'correct';
-            ps.dicho = '(auto)';
-          }
+          ps.estado = 'correct';
+          ps.dicho = '(auto)';
           updateWordEl(s);
         }
       }
